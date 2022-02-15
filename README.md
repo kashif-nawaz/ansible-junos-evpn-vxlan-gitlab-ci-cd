@@ -2,6 +2,7 @@
 ![Design](./images/design.png)
 * My  Ansible project for Junos IP-Fabric config and mgmt operations is available at [ansible-junos-evpn-vxlan](https://github.com/kashif-nawaz/ansible-junos-evpn-vxlan).
 * I have also described in detail how to setup a local instance of Gitlab, Setting up Gitlab-runner with docker-executor and its integration with a local Gitlab instance [Gitlabsetup] (https://github.com/kashif-nawaz/gitlabsetup-).
+* This wiki is describing how to setup Gitlab CI/CD to automate Junos IP-Fabric.
 ## Creating a Docker Image 
 * Hence, I am using docker-executor in Gitlab runner, so I need to build a docker image which will be used to run CI/CD jobs.
 * Because my original ansible-junos-evpn-vxlan project was tested with these packages, I used a Centos:7 base image, Python 2.7, and Ansible 2.8.3. Ideally, I should have used the latest Centos/Ubuntu and Python3 (I will give it a try at some later time).
