@@ -1,0 +1,178 @@
+--- 
+image: "gitlab.knawaz.lab.jnpr:5050/knawaz/junos-automation/centos7:junos-atomation2.7-v2"
+#comments added
+stages:
+  - generate_ip_fabric_config 
+  - fabric_mgmt_access_check
+  - fabric_links_status_check
+  - fabric_underlay_interfaces_config_push
+  - fabric_underlay_interfaces_icmp_check
+  - fabric_underlay_ebgp_config_push
+  - fabric_ebgp_status_check
+  - fabric_overlay_ibgp_config_push
+  - fabric_ibgp_status_check
+  - fabric_tenant_config_push
+  - fabric_vtep_status_check
+  - fabric_esi_lag_config_push
+  - fabric_esi_lag_status_check
+variables:
+    ANSIBLE_HOST_KEY_CHECKING: 'false'
+    ANSIBLE_FORCE_COLOR: 'true'
+
+generate_ip_fabric_config: 
+  stage: generate_ip_fabric_config
+  before_script:
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - ssh-keyscan gitlab.knawaz.lab.jnpr >> ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts
+    - ssh git@gitlab.knawaz.lab.jnpr
+  script:
+    - ansible-playbook -i ansible-junos-evpn-vxlan/inventory/lab/hosts.yml  ansible-junos-evpn-vxlan/generate_ip_fabric.yml -e "site=lab"
+  after_script:
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - ssh-keyscan gitlab.knawaz.lab.jnpr >> ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts
+    - ssh git@gitlab.knawaz.lab.jnpr
+    - git config --global user.email "cicd@runner"
+    - git config --global user.name "CICD Runner"
+    - git add --all 
+    - git commit -m "README.md updated" 
+    - git push -o ci.skip git@gitlab.knawaz.lab.jnpr:knawaz/junos-automation.git HEAD:main 
+  tags:
+    - automation
+
+fabric_mgmt_access_check_job: 
+  stage: fabric_mgmt_access_check
+  script:
+    - ansible -i ansible-junos-evpn-vxlan/inventory/lab/hosts.yml all -m ping --connect local
+  tags:
+    - automation
+  
+fabric_links_status_check_job: 
+  stage: fabric_links_status_check
+  script:
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - ansible-playbook -i ansible-junos-evpn-vxlan/inventory/lab/hosts.yml  ansible-junos-evpn-vxlan/fabric_links_status_check.yml -e "site=lab"
+  tags:
+    - automation
+
+fabric_underlay_interfaces_config_push_job: 
+  stage: fabric_underlay_interfaces_config_push
+  script:
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - ansible-playbook -i ansible-junos-evpn-vxlan/inventory/lab/hosts.yml   ansible-junos-evpn-vxlan/fabric_underlay_interfaces_config_push.yml -e "site=lab"
+  tags:
+    - automation
+
+fabric_underlay_interfaces_icmp_check_job: 
+  stage: fabric_underlay_interfaces_icmp_check
+  script:
+    - ssh-keygen -q -t rsa -N '' -f ~/.ssh/id_rsa 2>/dev/null <<< y >/dev/null
+    - rm -f ~/.ssh/id_rsa.pub
+    - echo "-----BEGIN RSA PRIVATE KEY-----" > ~/.ssh/id_rsa
+    - echo $SSH_PRIVATE_KEY | tr ' ' '\n' | tail -n+5 | head -n-4 >> ~/.ssh/id_rsa
+    - echo "-----END RSA PRIVATE KEY-----" >> ~/.ssh/id_rsa
+    - ansible-playbook -i ansible-junos-evpn-vxlan/inventory/lab/hosts.yml   ansible-junos-evpn-vxlan/fabric_underlay_interfaces_icmp_check.yml -e "site=lab" -vvv
+  tags:
+    - automation
+
+fabric_underlay_ebgp_config_push_job: 
+  stage: fabric_underlay_ebgp_config_push
+  script:
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - ansible-playbook -i ansible-junos-evpn-vxlan/inventory/lab/hosts.yml   ansible-junos-evpn-vxlan/fabric_underlay_ebgp_config_push.yml -e "site=lab"
+  tags:
+    - automation
+
+fabric_ebgp_status_check_job: 
+  stage: fabric_ebgp_status_check
+  script:
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - ansible-playbook -i ansible-junos-evpn-vxlan/inventory/lab/hosts.yml   ansible-junos-evpn-vxlan/fabric_ebgp_status_check.yml -e "site=lab"
+  tags:
+    - automation
+
+fabric_overlay_ibgp_config_push_job: 
+  stage: fabric_overlay_ibgp_config_push
+  script:
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - ansible-playbook -i ansible-junos-evpn-vxlan/inventory/lab/hosts.yml   ansible-junos-evpn-vxlan/fabric_overlay_ibgp_config_push.yml -e "site=lab"
+  tags:
+    - automation
+
+fabric_ibgp_status_check_job: 
+  stage: fabric_ibgp_status_check
+  script:
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - ansible-playbook -i ansible-junos-evpn-vxlan/inventory/lab/hosts.yml   ansible-junos-evpn-vxlan/fabric_ibgp_status_check.yml -e "site=lab"
+  tags:
+    - automation
+
+fabric_tenant_config_push_job: 
+  stage: fabric_tenant_config_push
+  script:
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - ansible-playbook -i ansible-junos-evpn-vxlan/inventory/lab/hosts.yml   ansible-junos-evpn-vxlan/fabric_tenant_config_push.yml -e "site=lab" 
+  tags:
+    - automation
+
+fabric_vtep_status_check_job: 
+  stage: fabric_vtep_status_check
+  script:
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - ansible-playbook -i ansible-junos-evpn-vxlan/inventory/lab/hosts.yml   ansible-junos-evpn-vxlan/fabric_vtep_status_check.yml -e "site=lab" 
+  tags:
+    - automation
+
+fabric_esi_lag_config_push_job: 
+  stage: fabric_esi_lag_config_push
+  script:
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - ansible-playbook -i ansible-junos-evpn-vxlan/inventory/lab/hosts.yml   ansible-junos-evpn-vxlan/fabric_esi_lag_config_push.yml -e "site=lab" 
+  tags:
+    - automation
+
+fabric_esi_lag_status_check_job: 
+  stage: fabric_esi_lag_status_check
+  script:
+    - ssh-keygen -q -t rsa -N '' -f ~/.ssh/id_rsa 2>/dev/null <<< y >/dev/null
+    - rm -f ~/.ssh/id_rsa.pub
+    - echo "-----BEGIN RSA PRIVATE KEY-----" > ~/.ssh/id_rsa
+    - echo $SSH_PRIVATE_KEY | tr ' ' '\n' | tail -n+5 | head -n-4 >> ~/.ssh/id_rsa
+    - echo "-----END RSA PRIVATE KEY-----" >> ~/.ssh/id_rsa
+    - ansible-playbook -i ansible-junos-evpn-vxlan/inventory/lab/hosts.yml   ansible-junos-evpn-vxlan/fabric_esi_lag_status_check.yml -e "site=lab" 
+  tags:
+    - automation
